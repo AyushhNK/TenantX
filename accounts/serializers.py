@@ -22,16 +22,40 @@ class InviteMemberSerializer(serializers.Serializer):
 
 class SignupSerializer(serializers.Serializer):
     org_name = serializers.CharField(max_length=150)
-    org_slug = serializers.SlugField()
+    org_slug = serializers.SlugField(required=False)  # optional, can auto-generate
     email = serializers.EmailField()
     username = serializers.CharField()
     password = serializers.CharField(write_only=True)
 
-    def create(self, validated):
-        from django.contrib.auth import get_user_model
-        User = get_user_model()
-        org = Organization.objects.create(name=validated['org_name'], slug=validated['org_slug'])
-        user = User.objects.create_user(
-            username=validated['username'], email=validated['email'], password=validated['password']
+    def validate_org_slug(self, value):
+        if Organization.objects.filter(slug=value).exists():
+            raise serializers.ValidationError("This organization slug is already taken.")
+        return value
+
+    def create(self, validated_data):
+        # Auto-generate slug if not provided
+        slug = validated_data.get("org_slug") or slugify(validated_data["org_name"])
+        # Ensure uniqueness
+        original_slug = slug
+        counter = 1
+        while Organization.objects.filter(slug=slug).exists():
+            slug = f"{original_slug}-{counter}"
+            counter += 1
+
+        # Create organization
+        org = Organization.objects.create(
+            name=validated_data["org_name"],
+            slug=slug
         )
-        Membership.objects.create(user=user, organization=org, role='admin')
+
+        # Create user
+        user = User.objects.create_user(
+            username=validated_data["username"],
+            email=validated_data["email"],
+            password=validated_data["password"]
+        )
+
+        # Create membership (admin)
+        Membership.objects.create(user=user, organization=org, role="admin")
+
+        return user, org  # return both user and org
