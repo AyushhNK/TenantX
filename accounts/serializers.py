@@ -2,6 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from core.models import Organization
 from .models import Membership
+from django.utils.text import slugify
 
 User = get_user_model()
 

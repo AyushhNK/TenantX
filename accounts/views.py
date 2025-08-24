@@ -3,6 +3,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.utils.crypto import get_random_string
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.urls import reverse
 
 from core.models import Organization
 from .models import Membership
@@ -14,6 +18,16 @@ from .serializers import (
 )
 
 User = get_user_model()
+
+
+# ---------------------------
+# Get Current User Profile
+# ---------------------------
+class CurrentUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        return Response(UserSerializer(request.user).data)
 
 
 # ---------------------------
@@ -82,10 +96,29 @@ class InviteMemberView(APIView):
             email = serializer.validated_data["email"]
             role = serializer.validated_data["role"]
 
-            user, _ = User.objects.get_or_create(
+            user,created = User.objects.get_or_create(
                 username=email,
                 defaults={"email": email},
             )
+            if created:
+                # Generate temporary password (not shared with user)
+                temp_password = "Testing123."
+                user.set_password(temp_password)
+                user.save()
+
+                # Generate password reset link
+                token = default_token_generator.make_token(user)
+                reset_url = request.build_absolute_uri(
+                    reverse("password_reset_confirm", args=[user.pk, token])
+                )
+
+                # Send email with reset link
+                send_mail(
+                    "You're invited to TenantX",
+                    f"Hello, please set your password here: {reset_url}",
+                    "noreply@tenantx.com",
+                    [email],
+                )
 
             Membership.objects.get_or_create(user=user, organization=org, role=role)
 
