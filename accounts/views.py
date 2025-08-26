@@ -23,6 +23,7 @@ from .serializers import (
     SignupSerializer,
     OrganizationSerializer,
 )
+from worker.tasks import send_invitation_email
 
 User = get_user_model()
 
@@ -124,15 +125,10 @@ class InviteMemberView(APIView):
         uid = urlsafe_base64_encode(force_bytes(user.pk))
 
         # Example: if frontend reset page is at /reset-password/
-        reset_url = f"somefrontendurl/reset-password/{uid}/{token}/"
+        reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
 
         # 6. Send email
-        send_mail(
-            "You're invited to TenantX",
-            f"Hello, please set your password here: {reset_url}",
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-        )
+        send_invitation_email.delay(email, reset_url, org.name) 
 
         # 7. Add membership
         Membership.objects.get_or_create(user=user, organization=org, role=role)
