@@ -23,7 +23,7 @@ from .serializers import (
     SignupSerializer,
     OrganizationSerializer,
 )
-from worker.tasks import send_invitation_email
+from worker.tasks import send_invite_email
 
 User = get_user_model()
 
@@ -128,7 +128,7 @@ class InviteMemberView(APIView):
         reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
 
         # 6. Send email
-        send_invitation_email.delay(email, reset_url, org.name) 
+        send_invite_email.delay(email, reset_url, org.name) 
 
         # 7. Add membership
         Membership.objects.get_or_create(user=user, organization=org, role=role)
