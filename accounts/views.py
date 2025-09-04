@@ -32,10 +32,11 @@ User = get_user_model()
 # Get Current User Profile
 # ---------------------------
 class CurrentUserView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        return Response(UserSerializer(request.user).data)
+        # return Response(UserSerializer(request.user).data)
+        return Response({"org": str(request.organization)})
 
 
 # ---------------------------
@@ -69,6 +70,7 @@ class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
+        # print(request.organization)
         username = request.data.get("username")
         password = request.data.get("password")
 
