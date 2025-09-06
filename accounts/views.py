@@ -72,18 +72,27 @@ class LoginView(APIView):
 
     def post(self, request):
         # print(request.organization)
-        username = request.data.get("username")
-        password = request.data.get("password")
-
-        user = authenticate(username=username, password=password)
-        if user:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            }, status=status.HTTP_200_OK)
-
-        return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        org=request.organization if request.organization else None
+        if org:
+            username = request.data.get("username")
+            password = request.data.get("password")
+            user = authenticate(username=username, password=password)
+            print(user.email)
+            membership = Membership.objects.filter(user=user, organization=org).first() if user else None
+            if user:
+                if membership:
+                    refresh = RefreshToken.for_user(user)
+                    return Response({
+                        "access": str(refresh.access_token),
+                        "refresh": str(refresh),
+                        "org_id": org.id,
+                        "role": membership.role,
+                    }, status=status.HTTP_200_OK)
+                else:
+                    return Response({"error": "User is not a member of this organization"}, status=status.HTTP_403_FORBIDDEN)
+            else:
+                return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
+        
 
 
 # ---------------------------
