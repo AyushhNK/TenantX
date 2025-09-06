@@ -36,7 +36,8 @@ class CurrentUserView(APIView):
 
     def get(self, request):
         # return Response(UserSerializer(request.user).data)
-        return Response({"org": str(request.organization)})
+        org=request.organization.name if request.organization else None
+        return Response({"organization": org}, status=status.HTTP_200_OK)
 
 
 # ---------------------------
@@ -94,7 +95,8 @@ class InviteMemberView(APIView):
     def post(self, request, org_id):
         # 1. Check org exists
         try:
-            org = Organization.objects.get(id=org_id)
+            org_slug=request.organization
+            org = Organization.objects.get(slug=org_slug)
         except Organization.DoesNotExist:
             return Response({"error": "Organization not found"}, status=404)
 
