@@ -8,12 +8,12 @@ from .serializers import ProjectSerializer
 class ProjectCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, org_id=None):
+    def post(self, request):
         """
         Create a project for the current organization.
         Organization is resolved via middleware (request.organization).
         """
-        org = getattr(request, "organization", None)
+        org = request.organization
         if not org:
             return Response(
                 {"error": "Organization not found"},
