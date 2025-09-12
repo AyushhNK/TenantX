@@ -2,8 +2,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
 from accounts.models import Membership
-from .models import Project
-from .serializers import ProjectSerializer
+from .models import Project, ProjectMember
+from .serializers import ProjectSerializer, ProjectMemberSerializer
 
 class ProjectCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -46,4 +46,14 @@ class ProjectCreateView(APIView):
                 status=status.HTTP_201_CREATED
             )
 
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class AssignMemberView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        serializer = ProjectMemberSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(organization=request.organization)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
