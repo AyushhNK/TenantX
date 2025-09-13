@@ -6,13 +6,15 @@ from .views import (
     MyMembershipsView,
     SwitchOrganizationView,
     ResetPasswordConfirmView,
-    CurrentUserView
+    CurrentUserView,
+    GetOrganizationMemberView
 )
 
 urlpatterns = [
     path("signup/", SignupView.as_view(), name="signup"),
     path("login/", LoginView.as_view(), name="login"),
     path("me/", CurrentUserView.as_view(), name="current-user"),
+    path("orgmembers/", GetOrganizationMemberView.as_view(), name="org-members"),
     path("organizations/invite/", InviteMemberView.as_view(), name="invite-member"),
     path("reset-password/<uidb64>/<token>/", ResetPasswordConfirmView.as_view(), name="reset-password-confirm"),
     path("me/memberships/", MyMembershipsView.as_view(), name="my-memberships"),

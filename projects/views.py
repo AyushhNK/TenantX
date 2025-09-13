@@ -8,6 +8,12 @@ from .serializers import ProjectSerializer, ProjectMemberSerializer
 class ProjectCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    def get(self, request):
+        org=request.organization
+        projects=Project.objects.filter(organization=org)
+        serializer=ProjectSerializer(projects,many=True)
+        return Response(serializer.data,status=status.HTTP_200_OK)
+
     def post(self, request):
         """
         Create a project for the current organization.

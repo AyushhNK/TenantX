@@ -16,6 +16,7 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "email", "first_name", "last_name"]
+        read_only_fields = ["id"]
 
 class InviteMemberSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -60,3 +61,10 @@ class SignupSerializer(serializers.Serializer):
         Membership.objects.create(user=user, organization=org, role="admin")
 
         return user, org  # return both user and org
+    
+    class OrganizationMemberSerializer(serializers.ModelSerializer):
+        user = UserSerializer(read_only=True)
+        class Meta:
+            model = Membership
+            fields = ['id', 'user', 'organization', 'role', 'joined_at']
+            read_only_fields = ['id', 'joined_at']

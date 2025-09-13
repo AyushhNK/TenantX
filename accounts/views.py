@@ -25,6 +25,9 @@ from .serializers import (
 )
 from worker.tasks import send_invite_email
 
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+
 User = get_user_model()
 
 
@@ -69,8 +72,8 @@ class SignupView(APIView):
 # ---------------------------
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
-
     def post(self, request):
+        
         # print(request.organization)
         org=request.organization if request.organization else None
         if org:
@@ -101,12 +104,11 @@ class LoginView(APIView):
 class InviteMemberView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
-    def post(self, request, org_id):
+    def post(self, request):
         # 1. Check org exists
         try:
-            org_slug=request.organization
-            org = Organization.objects.get(slug=org_slug)
-        except Organization.DoesNotExist:
+            org=request.organization
+        except org.DoesNotExist:
             return Response({"error": "Organization not found"}, status=404)
 
         # 2. Only admin can invite
@@ -203,3 +205,33 @@ class SwitchOrganizationView(APIView):
 
         request.session["current_org_id"] = org_id
         return Response({"message": "Organization switched"})
+
+class GetOrganizationMemberView(APIView):
+    permission_classes = [permissions.AllowAny]  # or IsAuthenticated if you want auth
+
+    def get(self, request):
+        # You can pass organization ID via query params: ?organization_id=1
+        org=request.organization
+        if not org:
+            return Response({"detail": "organization_id is required."}, status=400)
+
+        try:
+            org = Organization.objects.get(id=org.id)
+        except Organization.DoesNotExist:
+            return Response({"detail": "Organization not found."}, status=404)
+
+        # Get all memberships for this organization
+        members = Membership.objects.filter(organization=org)
+        result = []
+
+        for m in members:
+            member = {
+                "user_id": m.user.id,
+                "username": m.user.username,
+                "email": m.user.email,
+                "role": m.role,
+                "organization": m.organization.name
+            }
+            result.append(member)  # append member dict to result list
+
+        return Response(result, status=200)
